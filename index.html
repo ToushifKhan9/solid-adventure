@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Pricing Engine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            margin: 0; 
+            min-height: 100vh; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); 
+            color: #333;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 420px;
+            backdrop-filter: blur(10px);
+        }
+        h2 {
+            text-align: center;
+            margin-top: 0;
+            color: #1e3c72;
+            font-weight: 600;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #555;
+        }
+        input { 
+            width: 100%; 
+            padding: 12px; 
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+            font-size: 15px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #2a5298;
+            box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.1);
+        }
+        button { 
+            background: linear-gradient(135deg, #28a745 0%, #218838 100%); 
+            color: white; 
+            padding: 14px; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            width: 100%; 
+            font-size: 16px; 
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+        button:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(40, 167, 69, 0.3);
+        }
+        #result { 
+            margin-top: 25px; 
+            padding: 20px;
+            background: #f8f9fa;
+            border-left: 4px solid #28a745;
+            border-radius: 4px;
+            display: none; /* Hidden until button is clicked */
+        }
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 15px;
+        }
+        .result-row:last-child { margin-bottom: 0; font-weight: 600; font-size: 18px; color: #1e3c72; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Pricing Optimizer</h2>
+        
+        <div class="form-group">
+            <label>Category Average Price ($)</label>
+            <input type="number" id="category_price" value="100">
+        </div>
+
+        <div class="form-group">
+            <label>Average Freight Cost ($)</label>
+            <input type="number" id="freight" value="50">
+        </div>
+
+        <div class="form-group">
+            <label>Weekend Modifier (1=Yes, 0=No)</label>
+            <input type="number" id="weekend" value="1" min="0" max="1">
+        </div>
+
+        <div class="form-group">
+            <label>Month (1-12)</label>
+            <input type="number" id="month" value="5" min="1" max="12">
+        </div>
+
+        <button onclick="getOptimalPrice()">Run Analysis</button>
+
+        <div id="result">
+            <div class="result-row">
+                <span>Optimal Price:</span>
+                <span id="opt-price-val">--</span>
+            </div>
+            <div class="result-row">
+                <span>Max Revenue:</span>
+                <span id="max-rev-val">--</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function getOptimalPrice() {
+            // Button animation effect
+            const btn = document.querySelector('button');
+            btn.innerHTML = 'Calculating...';
+            
+            const data = {
+                category_avg_price: parseFloat(document.getElementById('category_price').value),
+                avg_freight: parseFloat(document.getElementById('freight').value),
+                is_weekend: parseInt(document.getElementById('weekend').value),
+                month: parseInt(document.getElementById('month').value)
+            };
+
+            try {
+                const response = await fetch("http://127.0.0.1:8000/optimize", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data)
+                });
+
+                const resultData = await response.json();
+                
+                // Show the hidden result box
+                document.getElementById('result').style.display = 'block';
+                
+                // Update the numbers with the nice currency formatting
+                document.getElementById('opt-price-val').innerText = `$${resultData.optimal_price.toFixed(2)}`;
+                document.getElementById('max-rev-val').innerText = `$${resultData.max_revenue.toFixed(2)}`;
+            } catch (error) {
+                alert("Error connecting to the backend. Make sure your Python server is running!");
+            }
+            
+            // Reset button text
+            btn.innerHTML = 'Run Analysis';
+        }
+    </script>
+
+</body>
+</html>
